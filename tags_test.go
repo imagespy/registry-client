@@ -2,7 +2,9 @@ package registry
 
 import (
 	"fmt"
+	"net/http"
 	"os/exec"
+	"time"
 
 	"github.com/DATA-DOG/godog"
 )
@@ -18,7 +20,19 @@ func aRunningDockerRegistryAt(address string) error {
 		return err
 	}
 
-	return nil
+	c := DefaultClient()
+	for try := 1; try <= 5; try++ {
+		resp, err := c.Get("http://" + address + "/v2")
+		if err == nil {
+			if resp.StatusCode == http.StatusOK {
+				return nil
+			}
+		}
+
+		time.Sleep(2 * time.Second)
+	}
+
+	return fmt.Errorf("registry container did not start within 10 seconds")
 }
 
 func aDockerImageBuiltFrom(image, pathDockerfile string) error {
@@ -29,6 +43,11 @@ func aDockerImageBuiltFrom(image, pathDockerfile string) error {
 	}
 
 	return nil
+}
+
+func aDockerImagePushed(image string) error {
+	cmd := exec.Command("docker", "push", image)
+	return cmd.Run()
 }
 
 func listingTagsOf(repo string) error {
@@ -64,6 +83,7 @@ func theListOfTagsContains(tag string) error {
 func FeatureContext(s *godog.Suite) {
 	s.Step(`^a running Docker registry at "([^"]*)"$`, aRunningDockerRegistryAt)
 	s.Step(`^a Docker image "([^"]*)" built from "([^"]*)"$`, aDockerImageBuiltFrom)
+	s.Step(`^a Docker image "([^"]*)" pushed$`, aDockerImagePushed)
 	s.Step(`^listing tags of "([^"]*)"$`, listingTagsOf)
 	s.Step(`^the list of tags contains "([^"]*)"$`, theListOfTagsContains)
 }
