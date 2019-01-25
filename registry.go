@@ -238,6 +238,10 @@ func (i *ImageService) get(ref string) (*Image, error) {
 	return image, nil
 }
 
+type tagGetAllResponse struct {
+	Tags []string
+}
+
 // TagService exposes tags in a repository.
 type TagService struct {
 	r *requester
@@ -250,13 +254,13 @@ func (r *TagService) GetAll() ([]string, error) {
 		return nil, err
 	}
 
-	tags := []string{}
-	_, err = r.r.getJSON(req, tags)
+	tagsResponse := tagGetAllResponse{}
+	_, err = r.r.getJSON(req, &tagsResponse)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading tags")
 	}
 
-	return tags, nil
+	return tagsResponse.Tags, nil
 }
 
 type requester struct {

@@ -2,6 +2,18 @@
 
 
 [[projects]]
+  digest = "1:142cf0c63cd0fc3cc0fdd26854cb028bb33d569f1b80de05f353cd45850e688b"
+  name = "github.com/DATA-DOG/godog"
+  packages = [
+    ".",
+    "colors",
+    "gherkin",
+  ]
+  pruneopts = "UT"
+  revision = "75562b12d67aa758aba65b0072c763bccf7e9b00"
+  version = "v0.7.9"
+
+[[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
@@ -96,6 +108,7 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/DATA-DOG/godog",
     "github.com/docker/distribution",
     "github.com/docker/distribution/manifest/manifestlist",
     "github.com/docker/distribution/manifest/schema1",
