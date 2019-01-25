@@ -10,18 +10,19 @@ var (
 	getConfigV1Result schema1.SignedManifest
 )
 
-func gettingTheConfigOfOfTag(repo, tag string) error {
-	reg := &Registry{
-		Client:   DefaultClient(),
-		Domain:   "127.0.0.1:6363",
-		Protocol: "http",
-	}
-
-	repository, err := reg.RepositoryFromString(repo)
+func gettingTheConfigOf(imageName string) error {
+	domain, path, tag, _, err := ParseImageName(imageName)
 	if err != nil {
 		return err
 	}
 
+	reg := &Registry{
+		Client:   DefaultClient(),
+		Domain:   domain,
+		Protocol: "http",
+	}
+
+	repository := reg.Repository(path)
 	image, err := repository.Images.GetByTag(tag)
 	if err != nil {
 		return err

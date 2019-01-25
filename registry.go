@@ -32,6 +32,27 @@ func DefaultClient() *http.Client {
 	}
 }
 
+// ParseImageName parses the name of an image and reurns its parts.
+func ParseImageName(imageName string) (domain, path, tag, digest string, err error) {
+	named, err := reference.ParseNormalizedNamed(imageName)
+	if err != nil {
+		return "", "", "", "", err
+	}
+
+	domain = reference.Domain(named)
+	path = reference.Path(named)
+
+	if tagged, ok := named.(reference.Tagged); ok {
+		tag = tagged.Tag()
+	}
+
+	if canonical, ok := named.(reference.Canonical); ok {
+		digest = canonical.Digest().String()
+	}
+
+	return domain, path, tag, digest, nil
+}
+
 // Registry exposes the repositories in a registry.
 type Registry struct {
 	Authenticator Authenticator

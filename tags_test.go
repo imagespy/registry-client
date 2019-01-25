@@ -9,17 +9,18 @@ var (
 )
 
 func listingTagsOf(repo string) error {
-	reg := &Registry{
-		Client:   DefaultClient(),
-		Domain:   "127.0.0.1:6363",
-		Protocol: "http",
-	}
-
-	repository, err := reg.RepositoryFromString(repo)
+	domain, path, _, _, err := ParseImageName(repo)
 	if err != nil {
 		return err
 	}
 
+	reg := &Registry{
+		Client:   DefaultClient(),
+		Domain:   domain,
+		Protocol: "http",
+	}
+
+	repository := reg.Repository(path)
 	listTagsResult, err = repository.Tags.GetAll()
 	if err != nil {
 		return err
