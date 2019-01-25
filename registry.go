@@ -98,18 +98,19 @@ type ConfigService struct {
 
 // GetV1 returns the manifest schema v1 of an image.
 // The manifest schema v1 is exposed as the "config" key in a manifest schema v2.
-func (c *ConfigService) GetV1(digest string) (schema1.SignedManifest, error) {
+// Note that the config can only be queried by tag, not by digest.
+func (c *ConfigService) GetV1(tag string) (schema1.SignedManifest, error) {
 	var m schema1.SignedManifest
-	path := fmt.Sprintf("/manifests/%s", digest)
+	path := fmt.Sprintf("/manifests/%s", tag)
 	req, err := c.r.newRequest("GET", path, nil)
 	if err != nil {
 		return m, err
 	}
 
-	req.Header.Add("Accept", schema1.MediaTypeManifest)
+	req.Header.Add("Accept", "application/vnd.docker.container.image.v1+json")
 	_, err = c.r.getJSON(req, &m)
 	if err != nil {
-		return m, errors.Wrapf(err, "reading config v1 '%s'", digest)
+		return m, errors.Wrapf(err, "reading config v1 '%s'", tag)
 	}
 
 	return m, nil

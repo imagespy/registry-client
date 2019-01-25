@@ -86,4 +86,8 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^a Docker image "([^"]*)" pushed$`, aDockerImagePushed)
 	s.Step(`^listing tags of "([^"]*)"$`, listingTagsOf)
 	s.Step(`^the list of tags contains "([^"]*)"$`, theListOfTagsContains)
+	s.Step(`^getting image "([^"]*)" by tag "([^"]*)"$`, gettingImageByTag)
+	s.Step(`^the image has the digest "([^"]*)"$`, theImageHasTheDigest)
+	s.Step(`^getting the config of "([^"]*)" of tag "([^"]*)"$`, gettingTheConfigOfOfTag)
+	s.Step(`^the config for repository "([^"]*)" and tag "([^"]*)" is returned$`, theConfigForRepositoryAndTagIsReturned)
 }
