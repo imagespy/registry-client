@@ -107,7 +107,7 @@ func (c *ConfigService) GetV1(tag string) (schema1.SignedManifest, error) {
 		return m, err
 	}
 
-	req.Header.Add("Accept", "application/vnd.docker.container.image.v1+json")
+	req.Header.Add("Accept", schema2.MediaTypeImageConfig)
 	_, err = c.r.getJSON(req, &m)
 	if err != nil {
 		return m, errors.Wrapf(err, "reading config v1 '%s'", tag)
