@@ -178,9 +178,11 @@ type Platform struct {
 // A tag (e.g. "lastest") can move between images.
 // A digest is unique within the repository and does not change unless teh image is deleted.
 type Image struct {
-	Digest    string
-	Platforms []*Platform
-	Tag       string
+	Digest     string
+	Domain     string
+	Platforms  []*Platform
+	Repository string
+	Tag        string
 }
 
 // ImageService exposes images.
@@ -192,7 +194,14 @@ type ImageService struct {
 // GetByDigest queries the repository for an image identified by its digest.
 // The `Tag` field of an image returned by this method always is an empty string.
 func (i *ImageService) GetByDigest(digest string) (*Image, error) {
-	return i.get(digest)
+	img, err := i.get(digest)
+	if err != nil {
+		return nil, err
+	}
+
+	img.Domain = i.r.domain
+	img.Repository = i.r.repository
+	return img, nil
 }
 
 // GetByTag queries the repository for an image identified by its tag.
@@ -202,6 +211,8 @@ func (i *ImageService) GetByTag(tag string) (*Image, error) {
 		return nil, err
 	}
 
+	image.Domain = i.r.domain
+	image.Repository = i.r.repository
 	image.Tag = tag
 	return image, nil
 }
