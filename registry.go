@@ -180,7 +180,7 @@ type Platform struct {
 type Image struct {
 	Digest     string
 	Domain     string
-	Platforms  []*Platform
+	Platforms  []Platform
 	Repository string
 	Tag        string
 }
@@ -193,10 +193,11 @@ type ImageService struct {
 
 // GetByDigest queries the repository for an image identified by its digest.
 // The `Tag` field of an image returned by this method always is an empty string.
-func (i *ImageService) GetByDigest(digest string) (*Image, error) {
+func (i *ImageService) GetByDigest(digest string) (Image, error) {
+	var img Image
 	img, err := i.get(digest)
 	if err != nil {
-		return nil, err
+		return img, err
 	}
 
 	img.Domain = i.r.domain
@@ -205,38 +206,38 @@ func (i *ImageService) GetByDigest(digest string) (*Image, error) {
 }
 
 // GetByTag queries the repository for an image identified by its tag.
-func (i *ImageService) GetByTag(tag string) (*Image, error) {
-	image, err := i.get(tag)
+func (i *ImageService) GetByTag(tag string) (Image, error) {
+	var img Image
+	img, err := i.get(tag)
 	if err != nil {
-		return nil, err
+		return img, err
 	}
 
-	image.Domain = i.r.domain
-	image.Repository = i.r.repository
-	image.Tag = tag
-	return image, nil
+	img.Domain = i.r.domain
+	img.Repository = i.r.repository
+	img.Tag = tag
+	return img, nil
 }
 
-func (i *ImageService) get(ref string) (*Image, error) {
+func (i *ImageService) get(ref string) (Image, error) {
+	var img Image
 	path := fmt.Sprintf("/manifests/%s", ref)
 	req, err := i.r.newRequest("GET", path, nil)
 	if err != nil {
-		return nil, err
+		return img, err
 	}
 
 	req.Header.Add("Accept", fmt.Sprintf("%s,%s;q=0.9", schema2.MediaTypeManifest, manifestlist.MediaTypeManifestList))
 	data, headers, err := i.r.getByte(req)
 	m, _, err := distribution.UnmarshalManifest(headers.Get("Content-Type"), data)
 	if err != nil {
-		return nil, errors.Wrapf(err, "unmarshalling manifest '%s'", ref)
+		return img, errors.Wrapf(err, "unmarshalling manifest '%s'", ref)
 	}
 
-	image := &Image{
-		Digest: headers.Get("Docker-Content-Digest"),
-	}
+	img.Digest = headers.Get("Docker-Content-Digest")
 	switch manifest := m.(type) {
 	case *schema2.DeserializedManifest:
-		p := &Platform{
+		p := Platform{
 			Architecture: "amd64",
 			Digest:       headers.Get("Docker-Content-Digest"),
 			Features:     []string{},
@@ -247,10 +248,10 @@ func (i *ImageService) get(ref string) (*Image, error) {
 			Size:         0,
 			Variant:      "",
 		}
-		image.Platforms = append(image.Platforms, p)
+		img.Platforms = append(img.Platforms, p)
 	case *manifestlist.DeserializedManifestList:
 		for _, platformManifest := range manifest.Manifests {
-			image.Platforms = append(image.Platforms, &Platform{
+			img.Platforms = append(img.Platforms, Platform{
 				Architecture: platformManifest.Platform.Architecture,
 				Digest:       platformManifest.Digest.String(),
 				Features:     platformManifest.Platform.Features,
@@ -263,12 +264,12 @@ func (i *ImageService) get(ref string) (*Image, error) {
 			})
 		}
 	case *schema1.SignedManifest:
-		return nil, ErrSchemaV1NotSupported
+		return img, ErrSchemaV1NotSupported
 	default:
-		return nil, ErrSchemaUnknown
+		return img, ErrSchemaUnknown
 	}
 
-	return image, nil
+	return img, nil
 }
 
 type tagGetAllResponse struct {
