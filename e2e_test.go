@@ -11,9 +11,9 @@ import (
 
 func aRunningDockerRegistryAt(address string) error {
 	cmd := exec.Command("docker-compose", "up", "-d")
-	_, err := cmd.CombinedOutput()
+	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return err
+		return fmt.Errorf("docker-compose failed with '%s': %s", err, string(out))
 	}
 
 	c := DefaultClient()
@@ -33,9 +33,9 @@ func aRunningDockerRegistryAt(address string) error {
 
 func aDockerImageBuiltFrom(image, pathDockerfile string) error {
 	cmd := exec.Command("docker", "build", "-t", image, "-f", pathDockerfile, ".")
-	_, err := cmd.CombinedOutput()
+	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return err
+		return fmt.Errorf("'docker build' failed with '%s': %s", err, string(out))
 	}
 
 	return nil
@@ -43,7 +43,12 @@ func aDockerImageBuiltFrom(image, pathDockerfile string) error {
 
 func aDockerImagePushed(image string) error {
 	cmd := exec.Command("docker", "push", image)
-	return cmd.Run()
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("'docker push' failed with '%s': %s", err, string(out))
+	}
+
+	return nil
 }
 
 func FeatureContext(s *godog.Suite) {
