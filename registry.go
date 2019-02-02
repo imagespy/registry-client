@@ -282,6 +282,8 @@ type TagService struct {
 }
 
 // GetAll returns all tags in the repository.
+// Note that this method does not implement pagination as described in the official documentation of the Docker Registry API V2
+// as the spec has not been implemented in the registry. See https://github.com/docker/distribution/issues/1936 for more information.
 func (r *TagService) GetAll() ([]string, error) {
 	req, err := r.r.newRequest("GET", "/tags/list", nil)
 	if err != nil {
