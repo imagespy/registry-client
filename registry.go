@@ -104,15 +104,19 @@ func (r *Registry) RepositoryFromString(name string) (*Repository, error) {
 
 // Repository exposes the images in a repository in a registry.
 type Repository struct {
-	Configs   *ConfigService
-	Images    *ImageService
-	Manifests *ManifestService
+	Configs   Configs
+	Images    Images
+	Manifests Manifests
 	Name      string
-	Registry  *Registry
-	Tags      *TagService
+	Tags      Tags
 }
 
-// ConfigService exposes the config of an image in a repository.
+// Configs exposes the config of an image in a repository.
+type Configs interface {
+	GetV1(tag string) (schema1.SignedManifest, error)
+}
+
+// ConfigService implements Configs.
 type ConfigService struct {
 	r *requester
 }
@@ -137,7 +141,12 @@ func (c *ConfigService) GetV1(tag string) (schema1.SignedManifest, error) {
 	return m, nil
 }
 
-// ManifestService exposes the manifest of an image in a repository.
+// Manifests exposes the manifest of an image in a repository.
+type Manifests interface {
+	Get(digest string) (schema2.Manifest, error)
+}
+
+// ManifestService implements Manifests.
 type ManifestService struct {
 	r *requester
 }
@@ -185,7 +194,13 @@ type Image struct {
 	Tag        string
 }
 
-// ImageService exposes images.
+// Images exposes images.
+type Images interface {
+	GetByDigest(digest string) (Image, error)
+	GetByTag(tag string) (Image, error)
+}
+
+// ImageService implements Images.
 type ImageService struct {
 	r    *requester
 	repo *Repository
@@ -276,7 +291,12 @@ type tagGetAllResponse struct {
 	Tags []string
 }
 
-// TagService exposes tags in a repository.
+// Tags exposes tags in a repository.
+type Tags interface {
+	GetAll() ([]string, error)
+}
+
+// TagService implements Tags.
 type TagService struct {
 	r *requester
 }
