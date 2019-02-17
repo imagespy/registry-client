@@ -23,12 +23,12 @@ func gettingTheConfigOf(imageName string) error {
 	}
 
 	repository := reg.Repository(path)
-	image, err := repository.Images.GetByTag(tag)
+	image, err := repository.Images().GetByTag(tag)
 	if err != nil {
 		return err
 	}
 
-	getConfigV1Result, err = repository.Configs.GetV1(image.Tag)
+	getConfigV1Result, err = repository.Configs().GetV1(image.Tag)
 	if err != nil {
 		return err
 	}

@@ -13,7 +13,7 @@ func ExampleRegistry() {
 		Domain:        "docker.io",
 	}
 	repo := reg.Repository("golang")
-	img, err := repo.Images.GetByTag("1.11.5")
+	img, err := repo.Images().GetByTag("1.11.5")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -21,7 +21,7 @@ func ExampleRegistry() {
 	fmt.Printf("Image Digest of Tag %s: %s\n", img.Tag, img.Digest)
 	for _, p := range img.Platforms {
 		fmt.Printf("Platform OS %s Architecture %s", p.OS, p.Architecture)
-		m, err := repo.Manifests.Get(p.Digest)
+		m, err := repo.Manifests().Get(p.Digest)
 		if err != nil {
 			log.Fatal(err)
 		}

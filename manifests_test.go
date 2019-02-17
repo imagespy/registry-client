@@ -23,14 +23,14 @@ func gettingTheManifestOfForPlatformWithOsAndArch(imageName, os, arch string) er
 	}
 
 	repository := reg.Repository(path)
-	image, err := repository.Images.GetByTag(tag)
+	image, err := repository.Images().GetByTag(tag)
 	if err != nil {
 		return err
 	}
 
 	for _, p := range image.Platforms {
 		if p.Architecture == arch && p.OS == os {
-			m, err := repository.Manifests.Get(p.Digest)
+			m, err := repository.Manifests().Get(p.Digest)
 			if err != nil {
 				return err
 			}

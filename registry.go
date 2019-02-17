@@ -80,11 +80,11 @@ func (r *Registry) Repository(name string) *Repository {
 		repository: name,
 	}
 	return &Repository{
-		Configs:   &ConfigService{r: req},
-		Images:    &ImageService{r: req},
-		Manifests: &ManifestService{r: req},
-		Name:      name,
-		Tags:      &TagService{r: req},
+		configService:   &ConfigService{r: req},
+		imageService:    &ImageService{r: req},
+		manifestService: &ManifestService{r: req},
+		name:            name,
+		tagService:      &TagService{r: req},
 	}
 }
 
@@ -104,12 +104,42 @@ func (r *Registry) RepositoryFromString(name string) (*Repository, error) {
 
 // Repository exposes the images in a repository in a registry.
 type Repository struct {
-	Configs   *ConfigService
-	Images    *ImageService
-	Manifests *ManifestService
-	Name      string
-	Registry  *Registry
-	Tags      *TagService
+	configService   *ConfigService
+	imageService    *ImageService
+	manifestService *ManifestService
+	name            string
+	registry        *Registry
+	tagService      *TagService
+}
+
+// Configs returns a ConfigService.
+func (r *Repository) Configs() *ConfigService {
+	return r.configService
+}
+
+// Images returns an ImageService.
+func (r *Repository) Images() *ImageService {
+	return r.imageService
+}
+
+// Manifests returns a ManifestService.
+func (r *Repository) Manifests() *ManifestService {
+	return r.manifestService
+}
+
+// Name returns the name of the repository.
+func (r *Repository) Name() string {
+	return r.name
+}
+
+// Registry returns the registry of the repository.
+func (r *Repository) Registry() *Registry {
+	return r.registry
+}
+
+// Tags returns a TagService.
+func (r *Repository) Tags() *TagService {
+	return r.tagService
 }
 
 // ConfigService exposes the config of an image in a repository.

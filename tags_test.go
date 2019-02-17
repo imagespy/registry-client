@@ -21,7 +21,7 @@ func listingTagsOf(repo string) error {
 	}
 
 	repository := reg.Repository(path)
-	listTagsResult, err = repository.Tags.GetAll()
+	listTagsResult, err = repository.Tags().GetAll()
 	if err != nil {
 		return err
 	}

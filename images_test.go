@@ -19,7 +19,7 @@ func gettingImage(imageName string) error {
 	}
 
 	repository := reg.Repository(path)
-	image, err := repository.Images.GetByTag(tag)
+	image, err := repository.Images().GetByTag(tag)
 	if err != nil {
 		return err
 	}
