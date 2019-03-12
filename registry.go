@@ -259,6 +259,10 @@ func (i *ImageService) get(ref string) (Image, error) {
 
 	req.Header.Add("Accept", fmt.Sprintf("%s,%s;q=0.9", schema2.MediaTypeManifest, manifestlist.MediaTypeManifestList))
 	data, headers, err := i.r.getByte(req)
+	if err != nil {
+		return img, err
+	}
+
 	m, _, err := distribution.UnmarshalManifest(headers.Get("Content-Type"), data)
 	if err != nil {
 		return img, errors.Wrapf(err, "unmarshalling manifest '%s'", ref)
