@@ -59,8 +59,6 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^the list of tags contains "([^"]*)"$`, theListOfTagsContains)
 	s.Step(`^getting image "([^"]*)"$`, gettingImage)
 	s.Step(`^the image has the digest "([^"]*)"$`, theImageHasTheDigest)
-	s.Step(`^getting the config of "([^"]*)"$`, gettingTheConfigOf)
-	s.Step(`^the config for repository "([^"]*)" and tag "([^"]*)" is returned$`, theConfigForRepositoryAndTagIsReturned)
 	s.Step(`^getting the manifest of "([^"]*)" for platform with os "([^"]*)" and arch "([^"]*)"$`, gettingTheManifestOfForPlatformWithOsAndArch)
 	s.Step(`^the manifest has the media type "([^"]*)"$`, theManifestHasTheMediaType)
 }

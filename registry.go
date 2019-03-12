@@ -80,7 +80,6 @@ func (r *Registry) Repository(name string) *Repository {
 		repository: name,
 	}
 	return &Repository{
-		configService:   &ConfigService{r: req},
 		imageService:    &ImageService{r: req},
 		manifestService: &ManifestService{r: req},
 		name:            name,
@@ -104,17 +103,11 @@ func (r *Registry) RepositoryFromString(name string) (*Repository, error) {
 
 // Repository exposes the images in a repository in a registry.
 type Repository struct {
-	configService   *ConfigService
 	imageService    *ImageService
 	manifestService *ManifestService
 	name            string
 	registry        *Registry
 	tagService      *TagService
-}
-
-// Configs returns a ConfigService.
-func (r *Repository) Configs() *ConfigService {
-	return r.configService
 }
 
 // Images returns an ImageService.
@@ -140,31 +133,6 @@ func (r *Repository) Registry() *Registry {
 // Tags returns a TagService.
 func (r *Repository) Tags() *TagService {
 	return r.tagService
-}
-
-// ConfigService exposes the config of an image in a repository.
-type ConfigService struct {
-	r *requester
-}
-
-// GetV1 returns the manifest schema v1 of an image.
-// The manifest schema v1 is exposed as the "config" key in a manifest schema v2.
-// Note that the config can only be queried by tag, not by digest.
-func (c *ConfigService) GetV1(tag string) (schema1.SignedManifest, error) {
-	var m schema1.SignedManifest
-	path := fmt.Sprintf("/manifests/%s", tag)
-	req, err := c.r.newRequest("GET", path, nil)
-	if err != nil {
-		return m, err
-	}
-
-	req.Header.Add("Accept", schema2.MediaTypeImageConfig)
-	_, err = c.r.getJSON(req, &m)
-	if err != nil {
-		return m, errors.Wrapf(err, "reading config v1 '%s'", tag)
-	}
-
-	return m, nil
 }
 
 // ManifestService exposes the manifest of an image in a repository.
