@@ -4,3 +4,32 @@
 [![GoDoc](https://godoc.org/github.com/imagespy/registry-client?status.svg)](https://godoc.org/github.com/imagespy/registry-client)
 
 A Docker Registry client.
+
+## Usage
+
+```
+package main
+
+import (
+	"fmt"
+	"log"
+
+	"github.com/imagespy/registry-client"
+)
+
+func main() {
+	reg := &registry.Registry{
+		Authenticator: registry.NewTokenAuthenticator(),
+		Client:        registry.DefaultClient(),
+		Domain:        "docker.io",
+	}
+
+	repo := reg.Repository("library/golang")
+	img, err := repo.Images().GetByTag("1.12.0")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println(img.Digest)
+}
+```
