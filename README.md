@@ -7,7 +7,7 @@ A Docker Registry client.
 
 ## Usage
 
-```
+```golang
 package main
 
 import (
