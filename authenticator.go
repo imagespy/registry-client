@@ -10,6 +10,8 @@ import (
 )
 
 var (
+	// ErrAuthTokenInvalid indicates the the registry issued a token but revoked it.
+	ErrAuthTokenInvalid = fmt.Errorf("A token was issued but is not longer valid")
 	// ErrAuthTokenNoBearer indicates that a registry did not return the expected authenticaton header.
 	ErrAuthTokenNoBearer = fmt.Errorf("Www-authenticate header value does not start with 'Bearer'")
 )
@@ -59,7 +61,7 @@ func NewNullAuthenticator() Authenticator {
 }
 
 type tokenResponse struct {
-	ExpiresIn int64
+	ExpiresIn int64 `json:"expires_in"`
 	Token     string
 }
 
@@ -90,6 +92,10 @@ func (t *tokenAuthenticator) HandleRequest(r *http.Request) error {
 func (t *tokenAuthenticator) HandleResponse(resp *http.Response) (*http.Response, bool, error) {
 	if resp.StatusCode != http.StatusUnauthorized {
 		return resp, false, nil
+	}
+
+	if resp.StatusCode == http.StatusUnauthorized && t.token != "" && t.expiresAt.After(time.Now()) {
+		return resp, false, ErrAuthTokenInvalid
 	}
 
 	wwwAuth := resp.Header.Get("www-authenticate")
@@ -135,7 +141,8 @@ func (t *tokenAuthenticator) requestToken() error {
 	}
 
 	t.token = tr.Token
-	t.expiresAt = time.Now().UTC().Add(time.Duration(tr.ExpiresIn - 30))
+	expiresInSeconds := time.Duration(tr.ExpiresIn-30) * time.Second
+	t.expiresAt = time.Now().Add(expiresInSeconds)
 	return nil
 }
 
