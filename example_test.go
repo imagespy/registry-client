@@ -12,8 +12,12 @@ func ExampleRegistry() {
 		Client:        DefaultClient(),
 		Domain:        "docker.io",
 	}
-	repo := reg.Repository("golang")
-	img, err := repo.Images().GetByTag("1.11.5")
+	repo, err := reg.RepositoryFromString("golang")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	img, err := repo.Images().GetByTag("1.12.0")
 	if err != nil {
 		log.Fatal(err)
 	}

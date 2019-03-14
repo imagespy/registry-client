@@ -24,7 +24,11 @@ func main() {
 		Domain:        "docker.io",
 	}
 
-	repo := reg.Repository("library/golang")
+	repo, err := reg.RepositoryFromString("golang")
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	img, err := repo.Images().GetByTag("1.12.0")
 	if err != nil {
 		log.Fatal(err)
