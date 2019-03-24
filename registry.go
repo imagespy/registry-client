@@ -173,7 +173,7 @@ type Platform struct {
 
 // Image is an identifiable resource in a repository.
 // An Image can be identified by a tag or a digest.
-// A tag (e.g. "lastest") can move between images.
+// A tag (e.g. "latest") can move between images.
 // A digest is unique within the repository and does not change unless teh image is deleted.
 type Image struct {
 	Digest     string
