@@ -189,6 +189,7 @@ type ImageService struct {
 	repo *Repository
 }
 
+// DeleteByDigest deletes an image. It uses the digest of an image to reference it.
 func (i *ImageService) DeleteByDigest(digest string) error {
 	path := fmt.Sprintf("/manifests/%s", digest)
 	req, err := i.r.newRequest("DELETE", path, nil)
