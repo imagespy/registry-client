@@ -189,6 +189,29 @@ type ImageService struct {
 	repo *Repository
 }
 
+func (i *ImageService) DeleteByDigest(digest string) error {
+	path := fmt.Sprintf("/manifests/%s", digest)
+	req, err := i.r.newRequest("DELETE", path, nil)
+	if err != nil {
+		return err
+	}
+
+	resp, err := i.r.sendRequest(req)
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode == http.StatusNotFound {
+		return ErrResourceNotFound
+	}
+
+	if resp.StatusCode != http.StatusAccepted {
+		return fmt.Errorf("deleting image returned status code %d expected 202", resp.StatusCode)
+	}
+
+	return nil
+}
+
 // GetByDigest queries the repository for an image identified by its digest.
 // The `Tag` field of an image returned by this method always is an empty string.
 func (i *ImageService) GetByDigest(digest string) (Image, error) {

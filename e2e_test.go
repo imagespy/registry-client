@@ -61,4 +61,6 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^the image has the digest "([^"]*)"$`, theImageHasTheDigest)
 	s.Step(`^getting the manifest of "([^"]*)" for platform with os "([^"]*)" and arch "([^"]*)"$`, gettingTheManifestOfForPlatformWithOsAndArch)
 	s.Step(`^the manifest has the media type "([^"]*)"$`, theManifestHasTheMediaType)
+	s.Step(`^deleting the image "([^"]*)"$`, deletingTheImage)
+	s.Step(`^the image "([^"]*)" does not exist$`, theImageDoesNotExist)
 }
