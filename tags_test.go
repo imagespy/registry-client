@@ -14,11 +14,11 @@ func listingTagsOf(repo string) error {
 		return err
 	}
 
-	reg := &Registry{
+	reg := New(Options{
 		Client:   DefaultClient(),
 		Domain:   domain,
 		Protocol: "http",
-	}
+	})
 
 	repository := reg.Repository(path)
 	listTagsResult, err = repository.Tags().GetAll()

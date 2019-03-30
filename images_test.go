@@ -14,11 +14,11 @@ func gettingImage(imageName string) error {
 		return err
 	}
 
-	reg := &Registry{
+	reg := New(Options{
 		Client:   DefaultClient(),
 		Domain:   domain,
 		Protocol: "http",
-	}
+	})
 
 	repository := reg.Repository(path)
 	image, err := repository.Images().GetByTag(tag)
@@ -44,11 +44,11 @@ func deletingTheImage(imageName string) error {
 		return err
 	}
 
-	reg := &Registry{
+	reg := New(Options{
 		Client:   DefaultClient(),
 		Domain:   domain,
 		Protocol: "http",
-	}
+	})
 	repository := reg.Repository(path)
 	img, err := repository.Images().GetByTag(tag)
 	if err != nil {
@@ -64,11 +64,11 @@ func theImageDoesNotExist(imageName string) error {
 		return err
 	}
 
-	reg := &Registry{
+	reg := New(Options{
 		Client:   DefaultClient(),
 		Domain:   domain,
 		Protocol: "http",
-	}
+	})
 	repository := reg.Repository(path)
 	_, err = repository.Images().GetByTag(tag)
 	if err == nil {

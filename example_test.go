@@ -7,11 +7,11 @@ import (
 
 func ExampleRegistry() {
 	// Query an image in the Docker Hub.
-	reg := &Registry{
+	reg := New(Options{
 		Authenticator: NewTokenAuthenticator(),
 		Client:        DefaultClient(),
 		Domain:        "docker.io",
-	}
+	})
 	repo, err := reg.RepositoryFromString("golang")
 	if err != nil {
 		log.Fatal(err)

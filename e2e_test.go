@@ -63,4 +63,6 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^the manifest has the media type "([^"]*)"$`, theManifestHasTheMediaType)
 	s.Step(`^deleting the image "([^"]*)"$`, deletingTheImage)
 	s.Step(`^the image "([^"]*)" does not exist$`, theImageDoesNotExist)
+	s.Step(`^listing repositories in "([^"]*)"$`, listingRepositoriesIn)
+	s.Step(`^the list of repositories contains "([^"]*)"$`, theListOfRepositoriesContains)
 }

@@ -53,38 +53,78 @@ func ParseImageName(imageName string) (domain, path, tag, digest string, err err
 	return domain, path, tag, digest, nil
 }
 
-// Registry exposes the repositories in a registry.
-type Registry struct {
+// Options are used to create a new Registry.
+type Options struct {
 	Authenticator Authenticator
 	Client        *http.Client
 	Domain        string
 	Protocol      string
 }
 
+// New returns a new Registry.
+func New(o Options) *Registry {
+	if o.Authenticator == nil {
+		o.Authenticator = NewNullAuthenticator()
+	}
+
+	if o.Protocol == "" {
+		o.Protocol = "https"
+	}
+
+	req := &Requester{
+		Domain:   o.Domain,
+		Auth:     o.Authenticator,
+		Client:   o.Client,
+		Protocol: o.Protocol,
+	}
+	return &Registry{
+		Requester: req,
+	}
+}
+
+// Registry exposes the repositories in a registry.
+type Registry struct {
+	Requester *Requester
+}
+
+type catalogResponse struct {
+	Repositories []string
+}
+
+// Repositories queries the registry and returns all available repositories.
+func (r *Registry) Repositories() ([]*Repository, error) {
+	req, err := r.Requester.NewRequest("GET", "/_catalog", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	out := &catalogResponse{}
+	_, err = r.Requester.GetJSON(req, out)
+	if err != nil {
+		return nil, err
+	}
+
+	repositories := []*Repository{}
+	for _, repoName := range out.Repositories {
+		repositories = append(repositories, r.Repository(repoName))
+	}
+
+	return repositories, nil
+}
+
 // Repository returns one repository in the registry.
 // It does not check if the repository actually exists in the registry.
 func (r *Registry) Repository(name string) *Repository {
-	if r.Authenticator == nil {
-		r.Authenticator = NewNullAuthenticator()
-	}
-
-	if r.Protocol == "" {
-		r.Protocol = "https"
-	}
-
-	req := &requester{
-		domain:     r.Domain,
-		auth:       r.Authenticator,
-		client:     r.Client,
-		protocol:   r.Protocol,
-		repository: name,
-	}
-	return &Repository{
-		imageService:    &ImageService{r: req},
-		manifestService: &ManifestService{r: req},
+	repo := &Repository{
+		imageService:    &ImageService{r: r.Requester},
+		manifestService: &ManifestService{r: r.Requester},
 		name:            name,
-		tagService:      &TagService{r: req},
+		tagService:      &TagService{r: r.Requester},
 	}
+	repo.imageService.repo = repo
+	repo.manifestService.repo = repo
+	repo.tagService.repo = repo
+	return repo
 }
 
 // RepositoryFromString is a convenience function to create a repository from an image as used in `docker pull`.
@@ -94,8 +134,8 @@ func (r *Registry) RepositoryFromString(name string) (*Repository, error) {
 		return nil, err
 	}
 
-	if reference.Domain(named) != r.Domain {
-		return nil, fmt.Errorf("domain in image '%s' not equal domain in registry object '%s'", reference.Domain(named), r.Domain)
+	if reference.Domain(named) != r.Requester.Domain {
+		return nil, fmt.Errorf("domain in image '%s' not equal domain in registry object '%s'", reference.Domain(named), r.Requester.Domain)
 	}
 
 	return r.Repository(reference.Path(named)), nil
@@ -135,22 +175,27 @@ func (r *Repository) Tags() *TagService {
 	return r.tagService
 }
 
+func (r *Repository) httpPath(path string) string {
+	return fmt.Sprintf("/%s%s", r.name, path)
+}
+
 // ManifestService exposes the manifest of an image in a repository.
 type ManifestService struct {
-	r *requester
+	r    *Requester
+	repo *Repository
 }
 
 // Get returns the manifest schema v2 of an image.
 func (p *ManifestService) Get(digest string) (schema2.Manifest, error) {
 	var m schema2.Manifest
 	path := fmt.Sprintf("/manifests/%s", digest)
-	req, err := p.r.newRequest("GET", path, nil)
+	req, err := p.r.NewRequest("GET", p.repo.httpPath(path), nil)
 	if err != nil {
 		return m, err
 	}
 
 	req.Header.Add("Accept", schema2.MediaTypeManifest)
-	_, err = p.r.getJSON(req, &m)
+	_, err = p.r.GetJSON(req, &m)
 	if err != nil {
 		return m, errors.Wrapf(err, "reading manifest '%s'", digest)
 	}
@@ -185,19 +230,19 @@ type Image struct {
 
 // ImageService exposes images.
 type ImageService struct {
-	r    *requester
+	r    *Requester
 	repo *Repository
 }
 
 // DeleteByDigest deletes an image. It uses the digest of an image to reference it.
 func (i *ImageService) DeleteByDigest(digest string) error {
 	path := fmt.Sprintf("/manifests/%s", digest)
-	req, err := i.r.newRequest("DELETE", path, nil)
+	req, err := i.r.NewRequest("DELETE", i.repo.httpPath(path), nil)
 	if err != nil {
 		return err
 	}
 
-	resp, err := i.r.sendRequest(req)
+	resp, err := i.r.SendRequest(req)
 	if err != nil {
 		return err
 	}
@@ -222,8 +267,8 @@ func (i *ImageService) GetByDigest(digest string) (Image, error) {
 		return img, err
 	}
 
-	img.Domain = i.r.domain
-	img.Repository = i.r.repository
+	img.Domain = i.r.Domain
+	img.Repository = i.repo.Name()
 	return img, nil
 }
 
@@ -235,8 +280,8 @@ func (i *ImageService) GetByTag(tag string) (Image, error) {
 		return img, err
 	}
 
-	img.Domain = i.r.domain
-	img.Repository = i.r.repository
+	img.Domain = i.r.Domain
+	img.Repository = i.repo.Name()
 	img.Tag = tag
 	return img, nil
 }
@@ -244,13 +289,13 @@ func (i *ImageService) GetByTag(tag string) (Image, error) {
 func (i *ImageService) get(ref string) (Image, error) {
 	var img Image
 	path := fmt.Sprintf("/manifests/%s", ref)
-	req, err := i.r.newRequest("GET", path, nil)
+	req, err := i.r.NewRequest("GET", i.repo.httpPath(path), nil)
 	if err != nil {
 		return img, err
 	}
 
 	req.Header.Add("Accept", fmt.Sprintf("%s,%s;q=0.9", schema2.MediaTypeManifest, manifestlist.MediaTypeManifestList))
-	data, headers, err := i.r.getByte(req)
+	data, headers, err := i.r.GetByte(req)
 	if err != nil {
 		return img, err
 	}
@@ -304,20 +349,21 @@ type tagGetAllResponse struct {
 
 // TagService exposes tags in a repository.
 type TagService struct {
-	r *requester
+	r    *Requester
+	repo *Repository
 }
 
 // GetAll returns all tags in the repository.
 // Note that this method does not implement pagination as described in the official documentation of the Docker Registry API V2
 // as the spec has not been implemented in the registry. See https://github.com/docker/distribution/issues/1936 for more information.
 func (r *TagService) GetAll() ([]string, error) {
-	req, err := r.r.newRequest("GET", "/tags/list", nil)
+	req, err := r.r.NewRequest("GET", r.repo.httpPath("/tags/list"), nil)
 	if err != nil {
 		return nil, err
 	}
 
 	tagsResponse := tagGetAllResponse{}
-	_, err = r.r.getJSON(req, &tagsResponse)
+	_, err = r.r.GetJSON(req, &tagsResponse)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading tags")
 	}
@@ -325,16 +371,17 @@ func (r *TagService) GetAll() ([]string, error) {
 	return tagsResponse.Tags, nil
 }
 
-type requester struct {
-	auth       Authenticator
-	client     *http.Client
-	domain     string
-	protocol   string
-	repository string
+// Requester handles all communication with the Docker registry.
+type Requester struct {
+	Auth     Authenticator
+	Client   *http.Client
+	Domain   string
+	Protocol string
 }
 
-func (r *requester) getByte(req *http.Request) ([]byte, http.Header, error) {
-	resp, err := r.sendRequest(req)
+// GetByte sends a request and returns the payload of the repsonse as bytes.
+func (r *Requester) GetByte(req *http.Request) ([]byte, http.Header, error) {
+	resp, err := r.SendRequest(req)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -352,8 +399,9 @@ func (r *requester) getByte(req *http.Request) ([]byte, http.Header, error) {
 	return data, resp.Header, nil
 }
 
-func (r *requester) getJSON(req *http.Request, out interface{}) (http.Header, error) {
-	data, headers, err := r.getByte(req)
+// GetJSON sends a request and returns the payload of the repsonse decoded from JSON.
+func (r *Requester) GetJSON(req *http.Request, out interface{}) (http.Header, error) {
+	data, headers, err := r.GetByte(req)
 
 	err = json.Unmarshal(data, out)
 	if err != nil {
@@ -363,34 +411,37 @@ func (r *requester) getJSON(req *http.Request, out interface{}) (http.Header, er
 	return headers, nil
 }
 
-func (r *requester) newRequest(method, path string, body io.Reader) (*http.Request, error) {
-	domain := r.domain
+// NewRequest creates a new request to send to the registry.
+func (r *Requester) NewRequest(method, path string, body io.Reader) (*http.Request, error) {
+	domain := r.Domain
 	if domain == "docker.io" {
 		domain = "index.docker.io"
 	}
 
-	url := fmt.Sprintf("%s://%s/v2/%s%s", r.protocol, domain, r.repository, path)
+	url := fmt.Sprintf("%s://%s/v2%s", r.Protocol, domain, path)
 	return http.NewRequest(method, url, body)
 }
 
-func (r *requester) sendRequest(req *http.Request) (*http.Response, error) {
-	err := r.auth.HandleRequest(req)
+// SendRequest sends a request to the registry.
+// It also handles authentication.
+func (r *Requester) SendRequest(req *http.Request) (*http.Response, error) {
+	err := r.Auth.HandleRequest(req)
 	if err != nil {
 		return nil, errors.Wrap(err, "handling authenticator request")
 	}
 
-	resp, err := r.client.Do(req)
+	resp, err := r.Client.Do(req)
 	if err != nil {
 		return nil, errors.Wrapf(err, "querying '%s'", req.URL.String())
 	}
 
-	resp, resend, err := r.auth.HandleResponse(resp)
+	resp, resend, err := r.Auth.HandleResponse(resp)
 	if err != nil {
 		return nil, errors.Wrap(err, "handling authenticator response")
 	}
 
 	if resend {
-		return r.sendRequest(req)
+		return r.SendRequest(req)
 	}
 
 	return resp, nil

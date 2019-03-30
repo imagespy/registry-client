@@ -1,11 +1,16 @@
 package registry
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
 	"github.com/stretchr/testify/require"
+)
+
+var (
+	repositoryList []*Repository
 )
 
 func TestParseImageName_Tag(t *testing.T) {
@@ -24,4 +29,29 @@ func TestParseImageName_Digest(t *testing.T) {
 	assert.Equal(t, "e2e", path)
 	assert.Equal(t, "", tag)
 	assert.Equal(t, "sha256:3d2e482b82608d153a374df3357c0291589a61cc194ec4a9ca2381073a17f58e", digest)
+}
+
+func listingRepositoriesIn(domain string) error {
+	reg := New(Options{
+		Client:   DefaultClient(),
+		Domain:   domain,
+		Protocol: "http",
+	})
+	var err error
+	repositoryList, err = reg.Repositories()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func theListOfRepositoriesContains(repositoryName string) error {
+	for _, r := range repositoryList {
+		if r.Name() == repositoryName {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("Repository %s not in list", repositoryName)
 }

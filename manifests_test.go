@@ -16,12 +16,11 @@ func gettingTheManifestOfForPlatformWithOsAndArch(imageName, os, arch string) er
 		return err
 	}
 
-	reg := &Registry{
+	reg := New(Options{
 		Client:   DefaultClient(),
 		Domain:   domain,
 		Protocol: "http",
-	}
-
+	})
 	repository := reg.Repository(path)
 	image, err := repository.Images().GetByTag(tag)
 	if err != nil {
