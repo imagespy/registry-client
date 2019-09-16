@@ -406,9 +406,12 @@ func (r *Requester) GetByte(req *http.Request) ([]byte, http.Header, error) {
 	return data, resp.Header, nil
 }
 
-// GetJSON sends a request and returns the payload of the repsonse decoded from JSON.
+// GetJSON sends a request and returns the payload of the response decoded from JSON.
 func (r *Requester) GetJSON(req *http.Request, out interface{}) (http.Header, error) {
 	data, headers, err := r.GetByte(req)
+	if err != nil {
+		return nil, err
+	}
 
 	err = json.Unmarshal(data, out)
 	if err != nil {
