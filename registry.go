@@ -116,6 +116,7 @@ func (r *Registry) Repositories() ([]*Repository, error) {
 // It does not check if the repository actually exists in the registry.
 func (r *Registry) Repository(name string) *Repository {
 	repo := &Repository{
+		domain:          r.Requester.Domain,
 		imageService:    &ImageService{r: r.Requester},
 		manifestService: &ManifestService{r: r.Requester},
 		name:            name,
@@ -143,11 +144,17 @@ func (r *Registry) RepositoryFromString(name string) (*Repository, error) {
 
 // Repository exposes the images in a repository in a registry.
 type Repository struct {
+	domain          string
 	imageService    *ImageService
 	manifestService *ManifestService
 	name            string
 	registry        *Registry
 	tagService      *TagService
+}
+
+// Domain returns the domain of the registry that the repository belongs to.
+func (r *Repository) Domain() string {
+	return r.domain
 }
 
 // Images returns an ImageService.
