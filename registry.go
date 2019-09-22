@@ -384,9 +384,10 @@ type Requester struct {
 	Client   *http.Client
 	Domain   string
 	Protocol string
+	Proxy    string
 }
 
-// GetByte sends a request and returns the payload of the repsonse as bytes.
+// GetByte sends a request and returns the payload of the response as bytes.
 func (r *Requester) GetByte(req *http.Request) ([]byte, http.Header, error) {
 	resp, err := r.SendRequest(req)
 	if err != nil {
@@ -426,6 +427,10 @@ func (r *Requester) NewRequest(method, path string, body io.Reader) (*http.Reque
 	domain := r.Domain
 	if domain == "docker.io" {
 		domain = "index.docker.io"
+	}
+
+	if r.Proxy != "" {
+		domain = r.Proxy
 	}
 
 	url := fmt.Sprintf("%s://%s/v2%s", r.Protocol, domain, path)
