@@ -59,6 +59,7 @@ type Options struct {
 	Client        *http.Client
 	Domain        string
 	Protocol      string
+	Proxy         string
 }
 
 // New returns a new Registry.
@@ -76,6 +77,7 @@ func New(o Options) *Registry {
 		Auth:     o.Authenticator,
 		Client:   o.Client,
 		Protocol: o.Protocol,
+		Proxy:    o.Proxy,
 	}
 	return &Registry{
 		Requester: req,
